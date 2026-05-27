@@ -1,0 +1,12 @@
+# ignore all
+*
+
+!.gitignore
+!.env.example
+!.LICENSE
+
+!bitrixprobe/
+!bitrixprobe/db/
+!bitrixprobe/db/db.sqlite
+
+
