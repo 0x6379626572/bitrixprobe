@@ -1,6 +1,6 @@
 # BitrixProbe
 
-![logo](.\img\bp_logo.jpg)
+![logo](img/bp_logo.jpg)
 
 
 BitrixProbe is a vulnerability assessment tool for CMS 1C-Bitrix/Bitrix24 installations. It is written in Python. 
