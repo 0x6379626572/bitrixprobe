@@ -33,6 +33,10 @@ def check_env_file_permissions(env_path) -> bool:
 
 
 def check_port(value) -> int | None:
+    """
+    Validate and normalize a TCP port value.
+    """
+
     if value is None or value == "":
         return None
 
@@ -45,6 +49,24 @@ def check_port(value) -> int | None:
         raise ValueError(f"Port must be between 1 and 65535: {ssh_port}")
 
     return ssh_port
+
+
+def get_schemeless_default_scheme(target_url) -> str:
+    """
+    Return the default scheme for a target URL that has no explicit scheme.
+    """
+
+    parsed_url = urlparse(f"//{target_url}")
+
+    try:
+        port = parsed_url.port
+    except ValueError as error:
+        raise ValueError(f"Invalid target port in URL: {target_url}") from error
+
+    if port == 80:
+        return "http"
+
+    return "https"
 
 
 def parse_pentest_target(target_url) -> dict:
@@ -67,9 +89,11 @@ def parse_pentest_target(target_url) -> dict:
         raise ValueError("Target URL is empty.")
 
     normalized_url = original_url
+    scheme_was_missing = "://" not in normalized_url
 
-    if "://" not in normalized_url:
-        normalized_url = f"https://{normalized_url}"
+    if scheme_was_missing:
+        default_scheme = get_schemeless_default_scheme(normalized_url)
+        normalized_url = f"{default_scheme}://{normalized_url}"
 
     parsed_url = urlparse(normalized_url)
 
@@ -142,6 +166,7 @@ def parse_pentest_target(target_url) -> dict:
         "netloc": netloc,
         "path": path,
         "explicit_port": explicit_port,
+        "scheme_was_missing": scheme_was_missing,
     }
 
 
@@ -231,6 +256,7 @@ def parse_args(argv=None) -> argparse.Namespace:
             "Examples:\n"
             "  bitrixprobe audit --host 192.168.56.10 --port 22 --user auditor --webroot /var/www/bitrix\n"
             "  bitrixprobe pentest --url http://192.168.56.10\n"
+            "  bitrixprobe pentest --url bitrix.local\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter
     )
@@ -254,7 +280,10 @@ def parse_args(argv=None) -> argparse.Namespace:
     pentest_parser.add_argument(
         "--url",
         required=True,
-        help="Target URL, for example: https://example.com or https://192.168.56.10:8080"
+        help=(
+            "Target URL or FQDN, for example: example.com, bitrix.local, "
+            "https://example.com, or https://192.168.56.10:8080"
+        )
     )
 
     if not argv:
