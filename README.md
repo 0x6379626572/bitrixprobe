@@ -191,6 +191,162 @@ python -m bitrixprobe audit --help
 | `--output-dir` | No | Local directory for report files. Defaults to `reports`. |
 
 
+## Using BitrixProbe with Docker
+
+Build the Docker image from the BitrixProbe project root. The build context
+must contain both `Dockerfile` and `requirements.txt`:
+
+```bash
+docker build --no-cache -t bitrixprobe:local .
+```
+
+Run BitrixProbe from Docker with the current host directory mounted as `/app`.
+This keeps the local `.env` file outside the image and saves reports to
+`$(pwd)/reports` on the host:
+
+```bash
+docker run --rm -it \
+  -v "$(pwd):/app" \
+  bitrixprobe:local --help
+```
+
+Run external web checks with a URL:
+
+```bash
+docker run --rm -it \
+  -v "$(pwd):/app" \
+  bitrixprobe:local pentest --url http://bitrix.local
+```
+
+If the target uses a local hostname, map it to the target IP for the container:
+
+```bash
+docker run --rm -it \
+  --add-host bitrix.local:10.111.111.137 \
+  -v "$(pwd):/app" \
+  bitrixprobe:local pentest --url http://bitrix.local
+```
+
+Run SSH audit mode with a host/IP and port. Do not pass an HTTP URL to
+`audit --host`:
+
+```bash
+docker run --rm -it \
+  -v "$(pwd):/app" \
+  bitrixprobe:local audit \
+  --host 10.111.111.137 \
+  --port 22 \
+  --user ubuntu \
+  --webroot /var/www/bitrix
+```
+
+For audit mode with a local `.env` file, keep `.env` in the current directory
+and mount the directory into the container:
+
+```bash
+chmod 640 .env
+
+docker run --rm -it \
+  -v "$(pwd):/app" \
+  bitrixprobe:local audit --webroot /var/www/bitrix
+```
+
+### Docker and VM Targets
+
+If the target Bitrix installation is inside a VM, the container may not be able to
+resolve or route to the VM even when the host machine can. A DNS error such as
+`Name does not resolve` means the container cannot resolve the hostname. Use
+`--add-host` or pass the target IP directly.
+
+If the target IP also does not connect from inside the container, the issue is
+network reachability. On Linux Docker Engine, try host networking:
+
+```bash
+docker run --rm -it \
+  --net=host \
+  -v "$(pwd):/app" \
+  bitrixprobe:local audit \
+  --host 10.111.111.137 \
+  --port 22 \
+  --user ubuntu \
+  --webroot /var/www/bitrix
+```
+
+On Docker Desktop for macOS or Windows, `--net=host` usually does not provide
+direct access to host-only VM networks. Use one of these approaches instead:
+
+- Change the VM network adapter to bridged mode.
+- Configure VM NAT port forwarding for SSH and HTTP/HTTPS.
+- Use an SSH tunnel from the host and connect to `host.docker.internal` from
+  the container.
+
+Example SSH tunnel from the host for audit scans:
+
+```bash
+ssh -N -L 127.0.0.1:2222:10.111.111.137:22 ubuntu@10.111.111.137
+```
+
+Then run the container against the forwarded SSH port:
+
+```bash
+docker run --rm -it \
+  -v "$(pwd):/app" \
+  bitrixprobe:local audit \
+  --host host.docker.internal \
+  --port 2222 \
+  --user ubuntu \
+  --webroot /var/www/bitrix
+```
+For `pentest --url`, forward the VM web port through SSH from the host. This is
+useful when the host can reach the VM, but the Docker container cannot route to
+the VM network directly.
+
+Forward HTTP from the VM to local port `8080`:
+
+```bash
+ssh -N -L 127.0.0.1:8080:127.0.0.1:80 ubuntu@10.111.111.137
+```
+
+Then scan the forwarded URL from Docker:
+
+```bash
+docker run --rm -it \
+  -v "$(pwd):/app" \
+  bitrixprobe:local pentest --url http://host.docker.internal:8080
+```
+
+For HTTPS, forward VM port `443` to local port `8443`:
+
+```bash
+ssh -N -L 127.0.0.1:8443:127.0.0.1:443 ubuntu@10.111.111.137
+```
+
+Then scan:
+
+```bash
+docker run --rm -it \
+  -v "$(pwd):/app" \
+  bitrixprobe:local pentest --url https://host.docker.internal:8443
+```
+
+Very often web server and Bitrix site will require a specific hostname, keep the tunnel and add a host
+mapping for the container. On macOS/Linux Docker Engine:
+
+```bash
+docker run --rm -it \
+  --add-host bitrix.local:host-gateway \
+  -v "$(pwd):/app" \
+  bitrixprobe:local pentest --url http://bitrix.local:8080
+```
+
+Test network access from inside the container:
+
+```bash
+python -c "import socket; print(socket.gethostbyname('bitrix.local'))"
+python -c "import socket; socket.create_connection(('10.111.111.137', 22), 5); print('ok')"
+```
+>*`https://bitrix.local` - a target url
+
 ## Vulnerability List
 
 ### Detection status legend
