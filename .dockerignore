@@ -1,21 +1,9 @@
 # ignore all
 *
 
-!.gitignore
 !.dockerignore
 !Dockerfile
-!.env.example
-!LICENSE
-!DISCLAIMER.md
 !requirements.txt
-!README.md
-
-!img/
-!img/bp_logo.jpg
-!img/bitrixprobe-pipeline.gif
-
-!reports/
-!reports/.gitkeep
 
 !bitrixprobe/
 !bitrixprobe/db/
