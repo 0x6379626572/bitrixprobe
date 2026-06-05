@@ -345,7 +345,7 @@ Test network access from inside the container:
 python -c "import socket; print(socket.gethostbyname('bitrix.local'))"
 python -c "import socket; socket.create_connection(('10.111.111.137', 22), 5); print('ok')"
 ```
->*`https://bitrix.local` - a target url
+>`https://bitrix.local` - a target url
 
 ## Vulnerability List
 
