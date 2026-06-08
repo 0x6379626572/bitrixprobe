@@ -6,8 +6,8 @@
 BitrixProbe is a vulnerability assessment tool for CMS 1C-Bitrix/Bitrix24 installations. It is written in Python. 
 
 It is designed around two separate assessment modes:
-- `pentest`: external HTTP/HTTPS checks against a target URL.
-- `audit`: authenticated local server checks over SSH.
+- `pentest`: external HTTP/HTTPS scans against a target URL.
+- `audit`: authenticated local server scans over SSH.
 
 
 ### Legal Disclaimer & Responsible Use
@@ -37,12 +37,15 @@ BitrixProbe is still evolving. Some checks focus on fingerprinting and exposure 
 designed as vulnerability-specific probes or local audit checks.
 
 
-## Modes
+## Features
 
-| Mode | Description | Authentication | Typical Use |
-| --- | --- | --- | --- |
-| `pentest` | External HTTP/HTTPS checks against a target URL. | Not required | Public exposure checks, fingerprinting, unauthenticated probes. |
-| `audit` | Local server checks over SSH. | Required | Installed module checks, local configuration review, version comparison. |
+- CVE, BDU, EPSS, CVSS, Positive Technologies Trending signal support
+- Enumeration modules to support penetration tests and audit assessments.
+- External Bitrix scans over HTTP and HTTPS.
+- Authenticated local server audit scans over SSH.
+- Standard result format for every module.
+- Plain text report generation.
+- Local vulnerability database updated daily.
 
 
 ## Tested Environment
@@ -54,16 +57,49 @@ BitrixProbe is developed and tested in a controlled lab environments.
 | Ubuntu 24.04.4 LTS Linux 6.8.0-117-generic aarch64 | PHP 8.3.6 | Apache/2.4.58 | 1C-Bitrix/Bitrix24 26.150.0 |
 
 
-## Features
+## Modes
 
-- Enumeration modules to support penetration tests and audit assessments.
-- External Bitrix checks over HTTP and HTTPS.
-- Authenticated local server audit checks over SSH.
-- Standard result format for every module.
-- Context sharing between modules for structured evidence.
-- Plain text report generation.
-- Local vulnerability database updated every day.
-- Python module architecture.
+| Mode | Description | Authentication | Typical Use |
+| --- | --- | --- | --- |
+| `pentest` | External HTTP/HTTPS scans against a target URL. | Not required | Public exposure checks, fingerprinting, unauthenticated probes. |
+| `audit` | Local server scans over SSH. | Required | Installed module checks, local configuration review, version comparison. |
+
+
+## Module Output Examples
+
+BitrixProbe prints each module result while the scan is running and saves the
+same human-readable evidence in a report. The following examples explain the
+information produced by pentest and audit scans.
+
+### Pentest Scan Example
+
+Pentest modules perform external HTTP/HTTPS checks without requiring access to
+the target server. For example, the `restore.php` exposure check can identify a
+publicly reachable Bitrix backup restoration script.
+
+The module reports the tested URL, HTTP response metadata, and the Bitrix
+markers that confirmed the finding. A positive `Detected: yes` result means the
+module found matching evidence; it does not mean every possible exploitation
+step was attempted.
+
+### Audit Scan Example
+
+Audit modules run authenticated server-side checks through SSH. For example,
+an audit check can compare installed Bitrix module versions with the local
+vulnerability database.
+
+The result identifies the installed module version, vulnerability identifiers,
+severity, and the version containing the fix. Audit findings should be reviewed
+against the server configuration and the vendor advisory before remediation.
+
+### Result Statuses
+
+| Output | Meaning |
+| --- | --- |
+| `Detected: yes` | The module completed and found matching evidence. |
+| `Detected: no` | The module completed successfully but did not find the condition. |
+| `Check skipped` | A required dependency was unavailable or was not detected. |
+| `Failed` | A technical error prevented the module from completing normally. |
 
 
 ## Installation
@@ -87,13 +123,13 @@ python -m bitrixprobe --help
 
 ## Usage
 
-Run external pentest checks:
+Run external pentest scans:
 
 ```bash
 python -m bitrixprobe pentest --url https://example.com
 ```
 
-Run authenticated server-side audit checks over SSH:
+Run authenticated server-side audit scans over SSH:
 
 ```bash
 python -m bitrixprobe audit \
@@ -210,7 +246,7 @@ docker run --rm -it \
   bitrixprobe:local --help
 ```
 
-Run external web checks with a URL:
+Run external web scans with a URL:
 
 ```bash
 docker run --rm -it \
@@ -329,7 +365,7 @@ docker run --rm -it \
   bitrixprobe:local pentest --url https://host.docker.internal:8443
 ```
 
-Very often web server and Bitrix site will require a specific hostname, keep the tunnel and add a host
+Very often web server and Bitrix site will require a specific domain name, because there might be virtual domain configuration on web server. Keep the tunnel and add a host
 mapping for the container. On macOS/Linux Docker Engine:
 
 ```bash
@@ -339,7 +375,7 @@ docker run --rm -it \
   bitrixprobe:local pentest --url http://bitrix.local:8080
 ```
 
-Test network access from inside the container:
+Also, there are some commands to test network access from inside the container:
 
 ```bash
 python -c "import socket; print(socket.gethostbyname('bitrix.local'))"
@@ -347,12 +383,13 @@ python -c "import socket; socket.create_connection(('10.111.111.137', 22), 5); p
 ```
 >*`https://bitrix.local` - a target url
 
+
 ## Vulnerability List
 
 ### Detection status legend
 
 - ![YES](https://img.shields.io/badge/status-YES-brightgreen?style=flat-square) — detection is supported.
-- ![YES Unauthenticated](https://img.shields.io/badge/status-YES_Unauthenticated-orange?style=flat-square) — HTTP pentest check works only if vulnerability can be exploited without authentication in non-default CMS installations. By default, **requires** authenticated access.
+- ![YES Unauthenticated](https://img.shields.io/badge/status-YES_Unauthenticated-orange?style=flat-square) — HTTP pentest scan works only if vulnerability can be exploited without authentication in non-default CMS installations. By default, **requires** authenticated access.
 - ![NO Authenticated](https://img.shields.io/badge/status-NO_Auth-red?style=flat-square) — exploitation **requires** authenticated access in default CMS installations.
 - ![NO DOS](https://img.shields.io/badge/status-NO_DOS-red?style=flat-square) — vulnerability is a Denial of Service Attack
 - ![NO](https://img.shields.io/badge/status-NO-red?style=flat-square) — detection is not implemented yet.

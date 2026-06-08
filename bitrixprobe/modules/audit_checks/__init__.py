@@ -5,6 +5,7 @@ from bitrixprobe.modules.audit_checks import detect_apache
 from bitrixprobe.modules.audit_checks import detect_nginx
 from bitrixprobe.modules.audit_checks import enum_apache_config
 from bitrixprobe.modules.audit_checks import enum_nginx_config
+from bitrixprobe.modules.audit_checks import enum_docker
 from bitrixprobe.modules.audit_checks import detect_bitrix
 from bitrixprobe.modules.audit_checks import check_bitrix_vulnerabilities
 from bitrixprobe.modules.audit_checks import check_bitrix_restore
@@ -22,6 +23,7 @@ AUDIT_CHECKS = [
     #OS enumeration
     enum_remote_identity,
     enum_php,
+    enum_docker,
 
     # Webserver enumeration
     detect_apache,

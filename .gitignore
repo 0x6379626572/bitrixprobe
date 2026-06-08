@@ -45,6 +45,7 @@
 !bitrixprobe/modules/audit_checks/enum_apache_config.py
 !bitrixprobe/modules/audit_checks/enum_nginx_config.py
 !bitrixprobe/modules/audit_checks/enum_php.py
+!bitrixprobe/modules/audit_checks/enum_docker.py
 !bitrixprobe/modules/audit_checks/enum_remote_identity.py
 !bitrixprobe/modules/audit_checks/enum_webroot_files.py
 !bitrixprobe/modules/pentest_checks/

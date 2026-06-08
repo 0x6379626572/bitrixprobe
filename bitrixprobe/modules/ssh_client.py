@@ -6,6 +6,10 @@ import shlex
 #TODO: Add key auth
 
 def connect_ssh(config, timeout=10):
+    """
+    Connect to a remote SSH server using the provided configuration.
+    """
+
     client = paramiko.SSHClient()
 
     client.load_system_host_keys()
@@ -39,13 +43,14 @@ def connect_ssh(config, timeout=10):
         raise RuntimeError(f"Network error during SSH connection: {error}") from error
 
 
-def run_remote_shell(client, command, shell="/bin/sh"):
+def run_remote_shell(client, command, shell="/bin/sh", stdin_data=None):
     """
     Execute a remote command through a predictable shell wrapper.
     A controlled PATH helps the scanner find common administrative binaries
     even when the non-interactive SSH session has a minimal environment.
     LC_ALL=C forces stable English command output where possible, which makes
-    parsing and detection logic more predictable.
+    parsing and detection logic more predictable. Optional stdin data is sent
+    over the SSH channel and is never included in the command string.
     """
     safe_path = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
@@ -58,11 +63,23 @@ def run_remote_shell(client, command, shell="/bin/sh"):
     quoted_script = shlex.quote(wrapped_script)
     wrapped_command = f"{shell} -c {quoted_script}"
 
-    return run_ssh_command(client, wrapped_command)
+    return run_ssh_command(
+        client=client,
+        command=wrapped_command,
+        stdin_data=stdin_data
+    )
 
 
-def run_ssh_command(client, command) -> dict:
+def run_ssh_command(client, command, stdin_data=None) -> dict:
+    """
+    Execute an SSH command and optionally provide data through standard input.
+    """
     stdin, stdout, stderr = client.exec_command(command)
+
+    if stdin_data is not None:
+        stdin.write(stdin_data)
+        stdin.flush()
+        stdin.channel.shutdown_write()
 
     exit_code = stdout.channel.recv_exit_status()
 
@@ -77,7 +94,9 @@ def run_ssh_command(client, command) -> dict:
 
 
 def download_remote_file(client, remote_path, local_path) -> Path:
-    # Download remote file over sft
+    """
+    Download a remote file over SFTP.
+    """
 
     local_path = Path(local_path)
     local_path.parent.mkdir(parents=True, exist_ok=True)
@@ -93,7 +112,9 @@ def download_remote_file(client, remote_path, local_path) -> Path:
 
 
 def remove_remote_file(client, remote_path):
-    # Remove remote file over sft
+    """
+    Remove a remote file over SFTP.
+    """
 
     sftp = client.open_sftp()
 
