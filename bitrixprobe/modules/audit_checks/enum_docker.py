@@ -12,7 +12,7 @@ Enumerate Docker Engine resources and identify common container security risks.
 
 CHECK_ID = "system.docker.enum_security"
 CHECK_NAME = "Docker Engine Security Enumeration"
-#OWASP_DOCKER_CHEAT_SHEET = "h_ttps://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html"
+OWASP_DOCKER_CHEAT_SHEET = "h_ttps://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html"
 
 DEPENDS_ON = []
 REQUIRES_DETECTED = []
